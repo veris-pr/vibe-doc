@@ -14,9 +14,12 @@ export default defineConfig({
     port: 5273,
     proxy: {
       '/api': {
-        target: 'http://localhost:8100',
+        target: 'http://backend:8100',
         changeOrigin: true,
       },
     },
+  },
+  optimizeDeps: {
+    include: ['marked'],
   },
 });

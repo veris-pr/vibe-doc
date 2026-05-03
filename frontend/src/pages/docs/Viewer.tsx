@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'preact/hooks';
+import { parse } from 'marked';
 
 interface Document {
   id: number;
@@ -16,9 +17,12 @@ interface Project {
   description?: string;
 }
 
-export function DocsViewer({ slug }: { slug?: string }) {
+interface Props {
+  slug?: string;
+}
+
+export function DocsViewer({ slug }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [searchOpen, setSearchOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [project, setProject] = useState<Project | null>(null);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -26,15 +30,25 @@ export function DocsViewer({ slug }: { slug?: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const projectSlug = slug || (typeof window !== 'undefined' ? window.location.pathname.split('/')[2] : '');
-  console.log('DocsViewer projectSlug:', projectSlug);
+  const projectSlug = slug || 'sample-docs';
 
+  const getDocSlug = () => {
+    const path = window.location.pathname;
+    const parts = path.split('/').filter(Boolean);
+    return parts[2] || null;
+  };
+  
   useEffect(() => {
     async function fetchDocs() {
+      if (!projectSlug) {
+        setError('No project specified');
+        setLoading(false);
+        return;
+      }
+      
       try {
         setLoading(true);
         
-        console.log('Fetching project:', `/api/v1/projects/slug/${projectSlug}`);
         const projectRes = await fetch(`/api/v1/projects/slug/${projectSlug}`);
         if (!projectRes.ok) {
           throw new Error('Project not found');
@@ -49,8 +63,11 @@ export function DocsViewer({ slug }: { slug?: string }) {
         const docsData = await docsRes.json();
         setDocuments(docsData);
         
-        if (docsData.length > 0) {
-          setCurrentDoc(docsData[0]);
+        // Find current doc based on URL path
+        const docSlug = getDocSlug();
+        const current = docsData.find((d: Document) => d.slug === docSlug) || docsData[0];
+        if (current) {
+          setCurrentDoc(current);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load');
@@ -63,6 +80,16 @@ export function DocsViewer({ slug }: { slug?: string }) {
       fetchDocs();
     }
   }, [projectSlug]);
+
+  useEffect(() => {
+    if (documents.length > 0) {
+      const docSlug = getDocSlug();
+      const current = documents.find((d: Document) => d.slug === docSlug) || documents[0];
+      if (current) {
+        setCurrentDoc(current);
+      }
+    }
+  }, [documents, window.location.pathname]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -147,7 +174,7 @@ export function DocsViewer({ slug }: { slug?: string }) {
           {currentDoc ? (
             <article class="prose">
               <h1>{currentDoc.title}</h1>
-              <div dangerouslySetInnerHTML={{ __html: currentDoc.content }} />
+              <div dangerouslySetInnerHTML={{ __html: parse(currentDoc.content) as string }} />
             </article>
           ) : (
             <div class="empty-state">No documents yet</div>
