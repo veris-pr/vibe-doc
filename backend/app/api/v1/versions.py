@@ -81,7 +81,6 @@ async def create_version(
         is_default=version_data.is_default
     )
     db.add(version)
-    await db.commit()
     await db.refresh(version)
     return version
 
@@ -102,5 +101,4 @@ async def delete_version(
         raise HTTPException(status_code=404, detail="Version not found")
     
     await db.delete(version)
-    await db.commit()
     return {"deleted": True}

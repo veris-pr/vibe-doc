@@ -10,6 +10,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String(255), unique=True, index=True, nullable=True)
     username = Column(String(100), unique=True, index=True, nullable=False)
+    password_hash = Column(String(255), nullable=True)
     github_id = Column(String(100), unique=True, index=True, nullable=True)
     github_access_token = Column(String(255), nullable=True)
     avatar_url = Column(String(500), nullable=True)

@@ -11,13 +11,11 @@ export const currentUser = signal<{ id: number; username: string; avatar_url?: s
 export function App() {
   return (
     <div class="app">
-      <Header />
       <Router>
         <Route path="/" component={Home} />
-        <Route path="/admin" component={AdminLayout}>
-          <Route path="/projects" component={ProjectsPage} />
-        </Route>
-        <Route path="/docs/:projectSlug/*" component={DocsViewer} />
+        <Route path="/docs" component={DocsViewer} />
+        <Route path="/docs/:slug" component={DocsViewer} />
+        <Route path="/admin/projects" component={AdminLayout} />
       </Router>
     </div>
   );

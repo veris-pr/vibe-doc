@@ -10,7 +10,7 @@ export function Home() {
           </p>
           <div class="hero-actions">
             <a href="/admin/projects" class="button primary">Get Started</a>
-            <a href="https://github.com" class="button secondary">View on GitHub</a>
+            <a href="/docs/sample-docs" class="button secondary">View Demo Docs</a>
           </div>
         </div>
       </section>

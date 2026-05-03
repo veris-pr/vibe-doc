@@ -1,11 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks, Request
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from pydantic import BaseModel, Field
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from slowapi import Limiter
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
 
 from app.database import get_db
 from app.models import Project, ProjectMember, User
@@ -13,8 +10,6 @@ from app.api.v1.auth import get_current_user
 from app.services.openapi_renderer import parse_openapi
 
 router = APIRouter()
-
-limiter = Limiter(key_func=get_remote_address)
 
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB max upload size
 
@@ -33,20 +28,10 @@ class OpenAPIUploadResponse(BaseModel):
     schemas_count: int
 
 
-async def handle_rate_limit_exceed(request: Request, exc: RateLimitExceeded):
-    raise HTTPException(
-        status_code=429,
-        detail="Rate limit exceeded. Please try again later."
-    )
-
-
 @router.post("/upload", response_model=OpenAPIUploadResponse)
-@limiter.limit("10/minute")
 async def upload_openapi_spec(
-    request: Request,
-    background_tasks: BackgroundTasks,
-    project_id: int = Field(..., gt=0),
-    file: UploadFile = File(..., max_size=MAX_FILE_SIZE),
+    project_id: int = Query(..., gt=0),
+    file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):

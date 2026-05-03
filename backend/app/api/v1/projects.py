@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -41,10 +42,9 @@ class ProjectOut(BaseModel):
     github_repo: Optional[str]
     custom_domain: Optional[str]
     is_public: bool
-    created_at: str
+    created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 
 @router.get("", response_model=List[ProjectOut])
@@ -84,7 +84,34 @@ async def create_project(
         role="owner"
     )
     db.add(member)
-    await db.commit()
+    
+    return {
+        "id": project.id,
+        "name": project.name,
+        "slug": project.slug,
+        "description": project.description,
+        "logo_url": project.logo_url,
+        "primary_color": project.primary_color,
+        "github_repo": project.github_repo,
+        "custom_domain": project.custom_domain,
+        "is_public": project.is_public,
+        "created_at": project.created_at
+    }
+
+
+@router.get("/slug/{slug}", response_model=ProjectOut)
+async def get_project_by_slug(
+    slug: str,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(Project)
+        .where(Project.slug == slug)
+    )
+    project = result.scalar_one_or_none()
+    
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
     
     return project
 
@@ -137,8 +164,6 @@ async def update_project(
     for key, value in update_data.items():
         setattr(project, key, value)
     
-    await db.commit()
-    await db.refresh(project)
     return project
 
 
@@ -163,5 +188,4 @@ async def delete_project(
         raise HTTPException(status_code=403, detail="Only owner can delete")
     
     await db.delete(project)
-    await db.commit()
     return {"deleted": True}

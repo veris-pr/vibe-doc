@@ -67,7 +67,6 @@ async def create_document_from_content(
         )
         db.add(doc)
     
-    await db.commit()
     await db.refresh(doc)
     
     return {
@@ -130,8 +129,6 @@ async def create_documents_batch(
             db.add(doc)
         
         created.append({'slug': slug, 'title': title})
-    
-    await db.commit()
     
     return {"created": len(created), "documents": created}
 
